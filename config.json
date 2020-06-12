@@ -1,64 +1,70 @@
 {
-	"name": "ClassNameHere",
-
-	"namespace": "Stanford\\ClassNameHere",
-
-	"description": "A template for a REDCap External Module",
-
-	"documentation": "README.md",
-
-	"authors": [
-		{
-			"name": "Andrew Martin",
-			"email": "andy123@stanford.edu",
-			"institution": "Stanford University"
-		}
-	],
-
-	"permissions": [
-		"redcap_module_system_enable",
-		"redcap_module_project_enable",
-		"redcap_module_save_configuration"
-	],
-	
-	"enable-every-page-hooks-on-system-pages": false,	
-
-	"links": {
-		"project": [
-
-		],
-		"control-center": [
-
-		]
-	},
-
-	"no-auth-pages": [
-
-	],
-
-	"project-settings": [
-		{
-			"key": "enable-project-debug-logging",
-			"name": "<b>Enable Debug Logging</b><br><i>(optional)</i> Requires installation and configuration of emLogger",
-			"required": false,
-			"type": "checkbox"
-		}
-	],
-
-
-	"system-settings": [
-		{
-			"key": "enable-system-debug-logging",
-			"name": "<b>Enable Debug Logging (system-wide)</b><i>(optional)</i> Requires installation and configuration of emLogger",
-			"required": false,
-			"type": "checkbox"
-		}
-	],
-
-	"compatibility": {
-		"php-version-min": "",
-		"php-version-max": "",
-		"redcap-version-min": "",
-		"redcap-version-max": ""
-	}
+  "name": "RenameAnswers",
+  "namespace": "Stanford\\RenameAnswers",
+  "description": "EM to copy answer from One instrument to another",
+  "documentation": "README.md",
+  "authors": [
+    {
+      "name": "Andrew Martin",
+      "email": "andy123@stanford.edu",
+      "institution": "Stanford University"
+    },
+    {
+      "name": "Ihab Zeedia",
+      "email": "ihabz@stanford.edu",
+      "institution": "Stanford University"
+    }
+  ],
+  "permissions": [
+    "redcap_save_record"
+  ],
+  "project-settings": [
+    {
+      "key": "instance",
+      "name": "<b>Configure Rename Answers Instances</b>",
+      "required": true,
+      "type": "sub_settings",
+      "repeatable": true,
+      "sub_settings": [
+        {
+          "key": "source_instruments",
+          "name": "<b>Select the source instrument that you want to copy answers from</b>",
+          "required": true,
+          "type": "form-list"
+        },
+        {
+          "key": "source_suffix",
+          "name": "Define the suffix that will be remove from source instrument and its fields to map them to destination instrument and fields",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "key": "destination_suffix",
+          "name": "Define the destination instrument and its fields suffix",
+          "required": false,
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "enable-project-debug-logging",
+      "name": "<b>Enable Debug Logging</b><br><i>(optional)</i> Requires installation and configuration of emLogger",
+      "required": false,
+      "type": "checkbox"
+    }
+  ],
+  "system-settings": [
+    {
+      "key": "enable-system-debug-logging",
+      "name": "<b>Enable Debug Logging (system-wide)</b><i>(optional)</i> Requires installation and configuration of emLogger",
+      "required": false,
+      "type": "checkbox"
+    }
+  ],
+  "compatibility": {
+    "php-version-min": "",
+    "php-version-max": "",
+    "redcap-version-min": "",
+    "redcap-version-max": ""
+  }
 }
