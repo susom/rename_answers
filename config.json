@@ -1,7 +1,7 @@
 {
-  "name": "RenameAnswers",
+  "name": "Rename Answers",
   "namespace": "Stanford\\RenameAnswers",
-  "description": "EM to copy answer from One instrument to another",
+  "description": "EM to copy answer from one instrument to another in the same event.",
   "documentation": "README.md",
   "authors": [
     {
