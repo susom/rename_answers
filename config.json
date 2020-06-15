@@ -1,5 +1,5 @@
 {
-  "name": "Rename Answers",
+  "name": "Copy Answers",
   "namespace": "Stanford\\RenameAnswers",
   "description": "EM to copy answer from one instrument to another in the same event.",
   "documentation": "README.md",
@@ -20,6 +20,12 @@
   ],
   "project-settings": [
     {
+      "key": "description",
+      "name": "This EM will allow you to copy the answers from one instrument to another within the same event.",
+      "required": true,
+      "type": "descriptive"
+    },
+    {
       "key": "instance",
       "name": "<b>Configure Rename Answers Instances</b>",
       "required": true,
@@ -28,19 +34,19 @@
       "sub_settings": [
         {
           "key": "source_instruments",
-          "name": "<b>Select the source instrument that you want to copy answers from</b>",
+          "name": "<b>Source Instrument</b><br>Select the source instrument that you want to copy answers from",
           "required": true,
           "type": "form-list"
         },
         {
           "key": "source_suffix",
-          "name": "Define the suffix that will be remove from source instrument and its fields to map them to destination instrument and fields",
+          "name": "<b>Source Suffix</b><br>Define the suffix that will be remove from source instrument and its fields names to match the destination instrument and fields names",
           "required": true,
           "type": "text"
         },
         {
           "key": "destination_suffix",
-          "name": "Define the destination instrument and its fields suffix",
+          "name": "<b>Destination Suffix</b><br>Define the suffix that will be added to destination instrument and fields names.",
           "required": false,
           "type": "text"
         }

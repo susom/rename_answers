@@ -1,4 +1,5 @@
 <?php
+
 namespace Stanford\RenameAnswers;
 
 require_once "emLoggerTrait.php";
@@ -7,6 +8,7 @@ require_once "emLoggerTrait.php";
  * Class RenameAnswers
  * @package Stanford\RenameAnswers
  * @property array $instances;
+ * @property array $dataDictionary;
  * @property string $destinationInstrument
  * @property \Project $project
  */
@@ -19,6 +21,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
     private $destinationInstrument;
 
+    private $dataDictionary = array();
 
     private $project;
 
@@ -31,6 +34,8 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
             global $Proj;
             $this->setProject($Proj);
+
+            $this->setDataDictionary(\REDCap::getDataDictionary($this->getProject()->project_id, 'array'));
         }
     }
 
@@ -51,22 +56,32 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                     $instance['destination_suffix']);
                 $data = $this->convertSourceToDestinationData($record, $instrument, $event_id,
                     $instance['source_suffix'], $instance['destination_suffix']);
-                $this->saveDestinationData($record, $data, $event_id);
+                $this->saveDestinationData($record, $data, $event_id, $instrument);
             }
+
         } catch (\LogicException $e) {
-            echo $e->getMessage();
+            $this->emError($e->getMessage());
         } catch (\Exception $e) {
-            echo $e->getMessage();
+            $this->emError($e->getMessage());
         }
     }
 
-    private function saveDestinationData($record, $data, $eventId)
+    /**
+     * save data to destination
+     * @param $record
+     * @param $data
+     * @param $eventId
+     * @throws \Exception
+     */
+    private function saveDestinationData($record, $data, $eventId, $instrument)
     {
         $data[$this->getProject()->table_pk] = $record;
         $data['redcap_event_name'] = $this->getProject()->getUniqueEventNames($eventId);
         $response = \REDCap::saveData($this->getProjectId(), 'json', json_encode(array($data)));
         if (!empty($response['errors'])) {
             throw new \Exception(implode(",", $response['errors']));
+        } else {
+            $this->emLog("Data copied from instrument " . $instrument . " to " . $this->getDestinationInstrument());
         }
     }
 
@@ -89,15 +104,33 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                         if ($this->endsWith($field, '_complete')) {
                             continue;
                         }
+
+                        $sourceProp = $this->getDataDictionaryProp($field);
+
+                        $temp = $field;
                         if ($sourceSuffix != null) {
-                            $field = str_replace($sourceSuffix, '', $field);
+                            $temp = str_replace($sourceSuffix, '', $field);
                         }
 
                         if ($destinationSuffix != null) {
-                            $field = $field . $destinationSuffix;
+                            $temp = $temp . $destinationSuffix;
                         }
-                        $newField = $field;
-                        $result[$newField] = $value;
+                        $newField = $temp;
+                        $desFields = array_keys($this->getProject()->forms[$this->getDestinationInstrument()]['fields']);
+                        if (in_array($newField, $desFields)) {
+
+                            $destinationProp = $this->getDataDictionaryProp($newField);
+                            // extra check to confirm the source and destination fields have the same datatype.
+                            if ($destinationProp['field_type'] == $sourceProp['field_type']) {
+                                $result[$newField] = $value;
+                            } else {
+                                $this->emLog("$newField datatype " . $destinationProp['field_type'] . "  is not the same as  " . $field . " datatype " . $sourceProp['field_type'] . "!");
+                            }
+
+                        } else {
+                            $this->emLog("$newField does not exist in " . $this->getDestinationInstrument() . " and it will be skipped!");
+                        }
+
                     }
                 }
                 return $result;
@@ -190,4 +223,29 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
         return (substr($haystack, -$length) === $needle);
     }
+
+    /**
+     * @return array
+     */
+    public function getDataDictionary()
+    {
+        return $this->dataDictionary;
+    }
+
+    /**
+     * @param array $dataDictionary
+     */
+    public function setDataDictionary(array $dataDictionary)
+    {
+        $this->dataDictionary = $dataDictionary;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDataDictionaryProp($prop)
+    {
+        return $this->dataDictionary[$prop];
+    }
+
 }
