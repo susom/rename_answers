@@ -10,7 +10,11 @@ require_once "emLoggerTrait.php";
  * @property array $instances;
  * @property array $dataDictionary;
  * @property string $destinationInstrument
+ * @property string $sourceInstrument
  * @property \Project $project
+ * @property boolean $isSourceInstrumentRepeatable
+ * @property boolean $isDestinationInstrumentRepeatable
+ * @property int $recordInstance
  */
 class RenameAnswers extends \ExternalModules\AbstractExternalModule
 {
@@ -21,9 +25,17 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
     private $destinationInstrument;
 
+    private $sourceInstrument;
+
     private $dataDictionary = array();
 
     private $project;
+
+    private $isSourceInstrumentRepeatable;
+
+    private $isDestinationInstrumentRepeatable;
+
+    private $recordInstance;
 
     public function __construct()
     {
@@ -54,6 +66,21 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                 # find destination instrument
                 $this->setDestinationInstrument($instrument, $instance['source_suffix'],
                     $instance['destination_suffix']);
+
+                $this->setRecordInstance($repeat_instance);
+
+                $this->setIsDestinationInstrumentRepeatable($this->getProject()->isRepeatingForm($event_id,
+                    $this->getDestinationInstrument()));
+
+                $this->setSourceInstrument($instrument);
+
+                $this->setIsSourceInstrumentRepeatable($this->getProject()->isRepeatingForm($event_id, $instrument));
+
+                // make sure the repeat status is the same between source and destination
+                if ($this->isSourceInstrumentRepeatable() != $this->isDestinationInstrumentRepeatable()) {
+                    throw new \LogicException("the repeat status for $instrument is " . $this->isSourceInstrumentRepeatable() . " while " . $this->getDestinationInstrument() . " status is " . $this->isDestinationInstrumentRepeatable());
+                }
+
                 $data = $this->convertSourceToDestinationData($record, $instrument, $event_id,
                     $instance['source_suffix'], $instance['destination_suffix']);
                 $this->saveDestinationData($record, $data, $event_id, $instrument);
@@ -77,6 +104,12 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     {
         $data[$this->getProject()->table_pk] = $record;
         $data['redcap_event_name'] = $this->getProject()->getUniqueEventNames($eventId);
+
+        if ($this->isSourceInstrumentRepeatable()) {
+            $data['redcap_repeat_instrument'] = $this->getDestinationInstrument();
+            $data['redcap_repeat_instance'] = $this->getRecordInstance();
+        }
+
         $response = \REDCap::saveData($this->getProjectId(), 'json', json_encode(array($data)));
         if (!empty($response['errors'])) {
             throw new \Exception(implode(",", $response['errors']));
@@ -97,7 +130,13 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
         foreach ($records as $id => $record) {
             if ($id == $recordId) {
                 $fields = array_keys($this->getProject()->forms[$instrument]['fields']);
-                $data = $record[$eventId];
+                //if instrument is repeatable then get the repeatable instance data instead of non-repeating
+                if ($this->isDestinationInstrumentRepeatable()) {
+                    $data = $record['repeat_instances'][$eventId][$instrument][$this->getRecordInstance()];
+                } else {
+                    $data = $record[$eventId];
+                }
+
                 foreach ($data as $field => $value) {
                     if (in_array($field, $fields)) {
                         #no need to migrate the status
@@ -247,5 +286,70 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     {
         return $this->dataDictionary[$prop];
     }
+
+    /**
+     * @return bool
+     */
+    public function isSourceInstrumentRepeatable(): bool
+    {
+        return $this->isSourceInstrumentRepeatable;
+    }
+
+    /**
+     * @param bool $isSourceInstrumentRepeatable
+     */
+    public function setIsSourceInstrumentRepeatable(bool $isSourceInstrumentRepeatable): void
+    {
+        $this->isSourceInstrumentRepeatable = $isSourceInstrumentRepeatable;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDestinationInstrumentRepeatable()
+    {
+        return $this->isDestinationInstrumentRepeatable;
+    }
+
+    /**
+     * @param bool $isDestinationInstrumentRepeatable
+     */
+    public function setIsDestinationInstrumentRepeatable(bool $isDestinationInstrumentRepeatable)
+    {
+        $this->isDestinationInstrumentRepeatable = $isDestinationInstrumentRepeatable;
+    }
+
+    /**
+     * @return int
+     */
+    public function getRecordInstance()
+    {
+        return $this->recordInstance;
+    }
+
+    /**
+     * @param int $recordInstance
+     */
+    public function setRecordInstance(int $recordInstance)
+    {
+        $this->recordInstance = $recordInstance;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSourceInstrument()
+    {
+        return $this->sourceInstrument;
+    }
+
+    /**
+     * @param string $sourceInstrument
+     */
+    public function setSourceInstrument(string $sourceInstrument)
+    {
+        $this->sourceInstrument = $sourceInstrument;
+    }
+
 
 }
