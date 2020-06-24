@@ -290,7 +290,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     /**
      * @return bool
      */
-    public function isSourceInstrumentRepeatable(): bool
+    public function isSourceInstrumentRepeatable()
     {
         return $this->isSourceInstrumentRepeatable;
     }
@@ -298,7 +298,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     /**
      * @param bool $isSourceInstrumentRepeatable
      */
-    public function setIsSourceInstrumentRepeatable(bool $isSourceInstrumentRepeatable): void
+    public function setIsSourceInstrumentRepeatable($isSourceInstrumentRepeatable)
     {
         $this->isSourceInstrumentRepeatable = $isSourceInstrumentRepeatable;
     }
@@ -314,7 +314,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     /**
      * @param bool $isDestinationInstrumentRepeatable
      */
-    public function setIsDestinationInstrumentRepeatable(bool $isDestinationInstrumentRepeatable)
+    public function setIsDestinationInstrumentRepeatable($isDestinationInstrumentRepeatable)
     {
         $this->isDestinationInstrumentRepeatable = $isDestinationInstrumentRepeatable;
     }
@@ -330,7 +330,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     /**
      * @param int $recordInstance
      */
-    public function setRecordInstance(int $recordInstance)
+    public function setRecordInstance($recordInstance)
     {
         $this->recordInstance = $recordInstance;
     }
@@ -346,7 +346,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     /**
      * @param string $sourceInstrument
      */
-    public function setSourceInstrument(string $sourceInstrument)
+    public function setSourceInstrument($sourceInstrument)
     {
         $this->sourceInstrument = $sourceInstrument;
     }
