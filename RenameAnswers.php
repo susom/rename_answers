@@ -112,7 +112,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
         $response = \REDCap::saveData($this->getProjectId(), 'json', json_encode(array($data)));
         if (!empty($response['errors'])) {
-            throw new \Exception(implode(",", $response['errors']));
+            throw new \Exception($response['errors']);
         } else {
             $this->emLog("Data copied from instrument " . $instrument . " to " . $this->getDestinationInstrument());
         }
@@ -161,7 +161,16 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                             $destinationProp = $this->getDataDictionaryProp($newField);
                             // extra check to confirm the source and destination fields have the same datatype.
                             if ($destinationProp['field_type'] == $sourceProp['field_type']) {
-                                $result[$newField] = $value;
+
+                                # special case for checkboxes
+                                if ($destinationProp['field_type'] == 'checkbox') {
+                                    foreach ($value as $key => $item) {
+                                        $result[$newField . '___' . $key] = $item;
+                                    }
+                                } else {
+                                    $result[$newField] = $value;
+                                }
+
                             } else {
                                 $this->emLog("$newField datatype " . $destinationProp['field_type'] . "  is not the same as  " . $field . " datatype " . $sourceProp['field_type'] . "!");
                             }
