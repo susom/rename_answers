@@ -147,7 +147,6 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                         $temp = end($record['repeat_instances'][$eventId]);
                         $data = $temp[$this->getRecordInstance()];
                     }
-
                 } else {
                     $data = $record[$eventId];
                 }
