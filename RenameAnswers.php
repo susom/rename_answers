@@ -70,11 +70,12 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                 $this->setRecordInstance($repeat_instance);
 
                 $this->setIsDestinationInstrumentRepeatable($this->getProject()->isRepeatingForm($event_id,
-                    $this->getDestinationInstrument()));
+                        $this->getDestinationInstrument()) || $this->getProject()->isRepeatingEvent($event_id));
 
                 $this->setSourceInstrument($instrument);
 
-                $this->setIsSourceInstrumentRepeatable($this->getProject()->isRepeatingForm($event_id, $instrument));
+                $this->setIsSourceInstrumentRepeatable($this->getProject()->isRepeatingForm($event_id,
+                        $instrument) || $this->getProject()->isRepeatingEvent($event_id));
 
                 // make sure the repeat status is the same between source and destination
                 if ($this->isSourceInstrumentRepeatable() != $this->isDestinationInstrumentRepeatable()) {
@@ -106,13 +107,20 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
         $data['redcap_event_name'] = $this->getProject()->getUniqueEventNames($eventId);
 
         if ($this->isSourceInstrumentRepeatable()) {
-            $data['redcap_repeat_instrument'] = $this->getDestinationInstrument();
             $data['redcap_repeat_instance'] = $this->getRecordInstance();
+            if ($this->getProject()->isRepeatingForm($eventId, $instrument)) {
+                $data['redcap_repeat_instrument'] = $this->getDestinationInstrument();
+            }
         }
 
         $response = \REDCap::saveData($this->getProjectId(), 'json', json_encode(array($data)));
         if (!empty($response['errors'])) {
-            throw new \Exception($response['errors']);
+            if (is_array($response['errors'])) {
+                throw new \Exception(implode(",", $response['errors']));
+            } else {
+                throw new \Exception($response['errors']);
+            }
+
         } else {
             $this->emLog("Data copied from instrument " . $instrument . " to " . $this->getDestinationInstrument());
         }
@@ -133,6 +141,13 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
                 //if instrument is repeatable then get the repeatable instance data instead of non-repeating
                 if ($this->isDestinationInstrumentRepeatable()) {
                     $data = $record['repeat_instances'][$eventId][$instrument][$this->getRecordInstance()];
+
+                    # if repeating on event as WHOLE !!!
+                    if (is_null($data)) {
+                        $temp = end($record['repeat_instances'][$eventId]);
+                        $data = $temp[$this->getRecordInstance()];
+                    }
+
                 } else {
                     $data = $record[$eventId];
                 }
