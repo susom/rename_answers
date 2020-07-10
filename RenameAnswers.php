@@ -14,6 +14,7 @@ require_once "emLoggerTrait.php";
  * @property \Project $project
  * @property boolean $isSourceInstrumentRepeatable
  * @property boolean $isDestinationInstrumentRepeatable
+ * @property boolean $migrateStatus
  * @property int $recordInstance
  */
 class RenameAnswers extends \ExternalModules\AbstractExternalModule
@@ -36,6 +37,8 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     private $isDestinationInstrumentRepeatable;
 
     private $recordInstance;
+
+    private $migrateStatus;
 
     public function __construct()
     {
@@ -69,6 +72,8 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
                 $this->setRecordInstance($repeat_instance);
 
+                $this->setMigrateStatus($instance['migrate_record_status']);
+
                 $this->setIsDestinationInstrumentRepeatable($this->getProject()->isRepeatingForm($event_id,
                         $this->getDestinationInstrument()) || $this->getProject()->isRepeatingEvent($event_id));
 
@@ -88,8 +93,10 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
             }
 
         } catch (\LogicException $e) {
+            \REDCap::logEvent("Error:" . $e->getMessage());
             $this->emError($e->getMessage());
         } catch (\Exception $e) {
+            \REDCap::logEvent("Error:" . $e->getMessage());
             $this->emError($e->getMessage());
         }
     }
@@ -153,46 +160,47 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
 
                 foreach ($data as $field => $value) {
                     if (in_array($field, $fields)) {
-                        #no need to migrate the status
-                        if ($this->endsWith($field, '_complete')) {
-                            continue;
-                        }
-
-                        $sourceProp = $this->getDataDictionaryProp($field);
-
-                        $temp = $field;
-                        if ($sourceSuffix != null) {
+                        #migrate status if enabled from config.
+                        if ($this->endsWith($field, '_complete') && $this->isMigrateStatus()) {
                             $temp = str_replace($sourceSuffix, '', $field);
-                        }
+                            $result[$temp] = $value;
+                        } else {
 
-                        if ($destinationSuffix != null) {
-                            $temp = $temp . $destinationSuffix;
-                        }
-                        $newField = $temp;
-                        $desFields = array_keys($this->getProject()->forms[$this->getDestinationInstrument()]['fields']);
-                        if (in_array($newField, $desFields)) {
+                            $sourceProp = $this->getDataDictionaryProp($field);
 
-                            $destinationProp = $this->getDataDictionaryProp($newField);
-                            // extra check to confirm the source and destination fields have the same datatype.
-                            if ($destinationProp['field_type'] == $sourceProp['field_type']) {
+                            $temp = $field;
+                            if ($sourceSuffix != null) {
+                                $temp = str_replace($sourceSuffix, '', $field);
+                            }
 
-                                # special case for checkboxes
-                                if ($destinationProp['field_type'] == 'checkbox') {
-                                    foreach ($value as $key => $item) {
-                                        $result[$newField . '___' . $key] = $item;
+                            if ($destinationSuffix != null) {
+                                $temp = $temp . $destinationSuffix;
+                            }
+                            $newField = $temp;
+                            $desFields = array_keys($this->getProject()->forms[$this->getDestinationInstrument()]['fields']);
+                            if (in_array($newField, $desFields)) {
+
+                                $destinationProp = $this->getDataDictionaryProp($newField);
+                                // extra check to confirm the source and destination fields have the same datatype.
+                                if ($destinationProp['field_type'] == $sourceProp['field_type']) {
+
+                                    # special case for checkboxes
+                                    if ($destinationProp['field_type'] == 'checkbox') {
+                                        foreach ($value as $key => $item) {
+                                            $result[$newField . '___' . $key] = $item;
+                                        }
+                                    } else {
+                                        $result[$newField] = $value;
                                     }
+
                                 } else {
-                                    $result[$newField] = $value;
+                                    $this->emLog("$newField datatype " . $destinationProp['field_type'] . "  is not the same as  " . $field . " datatype " . $sourceProp['field_type'] . "!");
                                 }
 
                             } else {
-                                $this->emLog("$newField datatype " . $destinationProp['field_type'] . "  is not the same as  " . $field . " datatype " . $sourceProp['field_type'] . "!");
+                                $this->emLog("$newField does not exist in " . $this->getDestinationInstrument() . " and it will be skipped!");
                             }
-
-                        } else {
-                            $this->emLog("$newField does not exist in " . $this->getDestinationInstrument() . " and it will be skipped!");
                         }
-
                     }
                 }
                 return $result;
@@ -374,5 +382,19 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
         $this->sourceInstrument = $sourceInstrument;
     }
 
+    /**
+     * @return bool
+     */
+    public function isMigrateStatus()
+    {
+        return $this->migrateStatus;
+    }
 
+    /**
+     * @param bool $migrateStatus
+     */
+    public function setMigrateStatus(bool $migrateStatus)
+    {
+        $this->migrateStatus = $migrateStatus;
+    }
 }

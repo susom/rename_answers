@@ -49,6 +49,12 @@
           "name": "<b>Destination Suffix</b><br>Define the suffix that will be added to destination instrument and fields names.",
           "required": false,
           "type": "text"
+        },
+        {
+          "key": "migrate_record_status",
+          "name": "<b>Migrate Record Status</b><br><i>(optional)</i>",
+          "required": false,
+          "type": "checkbox"
         }
       ]
     },
