@@ -393,7 +393,7 @@ class RenameAnswers extends \ExternalModules\AbstractExternalModule
     /**
      * @param bool $migrateStatus
      */
-    public function setMigrateStatus(bool $migrateStatus)
+    public function setMigrateStatus($migrateStatus)
     {
         $this->migrateStatus = $migrateStatus;
     }
