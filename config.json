@@ -39,10 +39,10 @@
           "type": "form-list"
         },
         {
-          "key": "source_suffix",
-          "name": "<b>Source Suffix</b><br>Define the suffix that will be remove from source instrument and its fields names to match the destination instrument and fields names",
-          "required": true,
-          "type": "text"
+            "key": "source_suffix",
+            "name": "<b>Source Suffix</b><br>Define the suffix that will be remove from source instrument and its fields names to match the destination instrument and fields names. <br><div class='alert alert-danger'>NOTE: make sure the suffix does not appear in the actual field name.</div>",
+            "required": true,
+            "type": "text"
         },
         {
           "key": "destination_suffix",
